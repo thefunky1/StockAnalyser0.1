@@ -135,6 +135,44 @@ sub create {
 
 sub select {
    my ($self, $hr_params) = @_;
+   my $s_table_name  = $hr_params->{table};
+   my $ar_columns    = $hr_params->{columns};
+   my $hr_where      = $hr_params->{where};
+
+   $self->connect();
+   # my $stmt = qq(SELECT column1, column2, columnN FROM table_name; ));
+   # my $stmt = qq(SELECT * FROM COMPANY; ));
+   # my $stmt = qq(SELECT sql FROM sqlite_master WHERE type = 'table' AND tbl_name = 'COMPANY'; ));
+   my $s_columns;
+   if ( $ar_fields ) {
+      my $i_count = 0;
+      for my $s_column ( @$ar_columns ) {
+         # first column
+         if ( $i_count == 0 ) {
+            $s_columns = $s_column;
+            $i_count++;
+            next;
+         }
+         $s_columns .= ", " . $s_column;
+      }
+   } else {
+      $s_columns = "*";
+   }
+   my $s_statement = "SELECT " . uc $s_columns . " FROM " . uc $s_table_name;
+   if ( $hr_where ) {
+      my $i_count = 0;
+      for my $s_column ( keys $hr_where ){
+         if ( $i_count == 0 ) {
+            my $s_statement .= " WHERE " . $s_column . " = '" . $hr_where{$s_column} . "'";
+            $i_count++;
+            next;
+         }
+         $s_statement .= " AND " . $s_column . " = '" . $hr_where{$s_column} . "'";
+      }
+   }
+   $self->{dbh}->do($s_statement) or die $DBI::errstr;
+   $self->disconnect();
+
    return;
 }
 
